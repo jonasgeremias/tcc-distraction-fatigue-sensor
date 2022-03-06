@@ -1,0 +1,38 @@
+{
+   // Essa task é para compilar via CCSC e obter os mesmos arquivos que o CCS gera.
+   // 13/02/2020 Jhonatan de O. Simon
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "label": "build",
+         "type": "shell",
+         "command": [
+            "C:/Program Files (x86)/PICC/CCSC"
+         ],
+         "args": [
+            "+FH",
+            "+Y9",
+            "+T",
+            "+A",
+            "+EA",
+            "+DF",
+            "+LN",
+            "+PE",
+            "+M",
+            "+STDOUT",
+            "${file}"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         },
+         "presentation": {
+            "reveal": "silent",
+            "showReuseMessage": false,
+            "panel": "shared",
+            "clear": true
+         },
+         "problemMatcher": "$gcc",
+      }
+   ]
+}

@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "sdmmc_defs.h": "c",
+        "esp_vfs_fat.h": "c",
+        "esp_camera.h": "c",
+        "sensor.h": "c",
+        "esp_event_loop.h": "c",
+        "sdmmc_cmd.h": "c",
+        "*.inc": "c",
+        "utils.c": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
+}
