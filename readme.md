@@ -37,3 +37,15 @@ Mostra-se desta forma o potencial a ser explorado nesta área de desenvolvimento
 ## Autor
 
 * Jonas P. Geremias
+
+
+## Imagens
+
+<img src="./resultados/detect.gif" width="800" heigth="600">
+
+<img src="./resultados/img2.jpeg" width="800" heigth="600">
+
+<img src="./resultados/img1.jpeg" width="800" heigth="600">
+
+<img src="./resultados/esquema.JPG" width="800" heigth="600">
+<img src="./resultados/placa.gif" width="800" heigth="600">
