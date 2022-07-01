@@ -35,7 +35,6 @@ static camera_config_t camera_config = {
     .pin_xclk = CAM_PIN_XCLK,
     .pin_sscb_sda = CAM_PIN_SIOD,
     .pin_sscb_scl = CAM_PIN_SIOC,
-
     .pin_d7 = CAM_PIN_D7,
     .pin_d6 = CAM_PIN_D6,
     .pin_d5 = CAM_PIN_D5,
@@ -48,21 +47,19 @@ static camera_config_t camera_config = {
     .pin_href = CAM_PIN_HREF,
     .pin_pclk = CAM_PIN_PCLK,
 
-    //XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
+    // XCLK 20MHz or 10MHz for OV2640 double FPS (Experimental)
     .xclk_freq_hz = 10000000,
-    .ledc_timer = LEDC_TIMER_0,
-    .ledc_channel = LEDC_CHANNEL_0,
-
-    .pixel_format = PIXFORMAT_RGB565, //YUV422,GRAYSCALE,RGB565,JPEG
-    .frame_size = FRAMESIZE_UXGA,    //QQVGA-UXGA Do not use sizes above QVGA when not JPEG
-
-    .jpeg_quality = 12, //0-63 lower number means higher quality
-    .fb_count = 1       //if more than one, i2s runs in continuous mode. Use only with JPEG
+    .ledc_timer = LEDC_TIMER_0, //LEDC_TIMER_0,
+    .ledc_channel = LEDC_CHANNEL_0, //LEDC_CHANNEL_0,
+    .pixel_format = PIXFORMAT_RGB565, //PIXFORMAT_RGB565, // PIXFORMAT_RGB565, //YUV422,GRAYSCALE,RGB565,JPEG
+    .frame_size = FRAMESIZE_HVGA,    // FRAMESIZE_CIF, QQVGA-UXGA Do not use sizes above QVGA when not JPEG
+    .jpeg_quality = 40, // 0-63 lower number means higher quality
+    .fb_count = 1       // if more than one, i2s runs in continuous mode. Use only with JPEG
 };
 
 static esp_err_t init_camera()
 {
-    //initialize the camera
+    // initialize the camera
     esp_err_t err = esp_camera_init(&camera_config);
     if (err != ESP_OK)
     {
@@ -80,7 +77,7 @@ static esp_err_t init_sdcard()
 
   esp_vfs_fat_sdmmc_mount_config_t mount_config = {
       .format_if_mount_failed = false,
-      .max_files = 50,
+      .max_files = 500,
       .allocation_unit_size = 16 * 1024
   };
   sdmmc_card_t *card;
@@ -110,39 +107,4 @@ static esp_err_t init_sdcard()
   }
 
   return ret;
-  // Card has been initialized, print its properties
-  // sdmmc_card_print_info(stdout, card);
 }
-
-
-// void app_main(void)
-// {
-//     init_camera();
-//     init_sdcard();
-
-//     while(1)
-//     {
-//         ESP_LOGI(TAG, "Taking picture...");
-//         camera_fb_t *pic = esp_camera_fb_get();
-//         static uint64_t counter = 0;
-//         counter++;
-
-//         char *pic_name = malloc(30 + sizeof(int64_t));
-//         sprintf(pic_name, MOUNT_POINT"/pic_%lli.jpg", counter);
-//         FILE *file = fopen(pic_name, "w");
-
-//         if (file != NULL)
-//         {
-//             fwrite(pic->buf, 1, pic->len, file);
-//             ESP_LOGI(TAG, "File saved: %s", pic_name);
-//         }
-//         else
-//         {
-//             ESP_LOGE(TAG, "Could not open file =(");
-//         }
-//         fclose(file);
-//         free(pic_name);
-
-//         vTaskDelay(3000 / portTICK_RATE_MS);
-//     }
-// }
