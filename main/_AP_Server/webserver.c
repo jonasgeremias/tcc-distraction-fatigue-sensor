@@ -337,9 +337,9 @@ httpd_handle_t start_webserver() {
    httpd_handle_t server = NULL;
    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-   ESP_LOGI("HEAP", LOG_BOLD(LOG_COLOR_BLUE) "%lld;\t%d", esp_timer_get_time(), esp_get_free_heap_size());
+   // ESP_LOGI("HEAP", LOG_BOLD(LOG_COLOR_BLUE) "%lld;\t%d", esp_timer_get_time(), esp_get_free_heap_size());
 
-   config.stack_size = (10000);
+   config.stack_size = (15000);
    config.core_id = 0;
    config.uri_match_fn = httpd_uri_match_wildcard;
    config.max_resp_headers = 50;

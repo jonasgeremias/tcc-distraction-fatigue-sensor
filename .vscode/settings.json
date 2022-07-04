@@ -53,7 +53,8 @@
         "_timer_v1.0.c": "cpp",
         "*.ipp": "cpp",
         "chrono": "cpp",
-        "distraction_detect.c": "cpp"
+        "distraction_detect.c": "cpp",
+        "wifi.c": "cpp"
     },
     "C_Cpp.errorSquiggles": "Disabled",
     "inline-bookmarks.expert.custom.styles": {

@@ -61,32 +61,44 @@ volatile int rosto_ok = 0;
 volatile int rosto_anterior = 0;
 volatile int8_t qty_faces_detected = 0;
 volatile int8_t camera_error_count = 0;
+volatile int8_t sd_error_count = 0;
 volatile bool camera_iniciou = 0;
+volatile bool sd_iniciou = 0;
 volatile bool release_erro = 0;
 IRAM_ATTR int distraction_timeout = TEMPO_DISTRACAO_MS * 2;
 IRAM_ATTR int erro_timeout_ms = TEMPO_ERRO_MAX_MS; // Espera uma detecção ok
 IRAM_ATTR int alert_timeout_ms = 0;
 
+int64_t tempo_leitura_imagem = 0;
+int64_t tempo_anterior = 0;
+
 /******************************************************************************
  * Função de controle de inicio da câmera
  *****************************************************************************/
 void camera_init_test() {
-   if (!camera_iniciou) {
-      do {
-         if (init_camera() != ESP_OK) camera_error_count++;
-         else {
-            camera_error_count = 0;
-            vTaskDelay(50 / portTICK_RATE_MS);
-            image = esp_camera_fb_get();
-            esp_camera_fb_return(image);
-            camera_iniciou = 1;
-            break;
-         }
-      } while (camera_error_count < 5);
+   if (!camera_iniciou && camera_error_count < 5) {
+      if (init_camera() != ESP_OK) camera_error_count++;
+      else {
+         // sensor_t *sensor = esp_camera_sensor_get();
+         camera_error_count = 0;
+         vTaskDelay(50 / portTICK_RATE_MS);
+         image = esp_camera_fb_get();
+         esp_camera_fb_return(image);
+         camera_iniciou = 1;
+      }
    }
 }
 
-void salvar_data_in_sd() {
+void sd_init_test() {
+   if (!sd_iniciou && sd_error_count < 5) {
+      if (init_sdcard() != ESP_OK) sd_error_count++;
+      else {
+         sd_iniciou = 1;
+      }
+   }
+}
+
+void sd_save_data() {
    bool jpeg_converted = frame2jpg(image, 80, &_jpeg_buf, &_jpeg_buf_len);
    if (image != NULL) esp_camera_fb_return(image);
    if (jpeg_converted) {
@@ -102,7 +114,7 @@ void salvar_data_in_sd() {
       char *p_ini = p;
 
       // score, box, eye_l, eye_r, nose, mouth_l, mouth_r
-      p += sprintf((char*) &text, "{\"score\":%.5f, \"box\": [%d, %d, %d, %d],", data_predict.score, data_predict.box[0], data_predict.box[1], data_predict.box[2], data_predict.box[3]);
+      p += sprintf((char *) &text, "{\"score\":%.5f, \"box\": [%d, %d, %d, %d],", data_predict.score, data_predict.box[0], data_predict.box[1], data_predict.box[2], data_predict.box[3]);
       p += sprintf(p, "\"pt\": [%d, %d, %d, %d, %d, %d, %d, %d, %d, %d]}",
                    data_predict.eye_l[0], data_predict.eye_l[1],
                    data_predict.eye_r[0], data_predict.eye_r[1],
@@ -122,7 +134,7 @@ void salvar_data_in_sd() {
 }
 
 /******************************************************************************
- * @audit Esta não foi utilizada 
+ * @audit Esta não foi utilizada
  *****************************************************************************/
 int distance_between(int p1_x, int p1_y, int p2_x, int p2_y) {
    double dx = p2_x - p1_x;
@@ -152,10 +164,10 @@ float angle_between(int p1_x, int p1_y, int p2_x, int p2_y) {
  * @@ Analise de angulo para identificar distração
  *****************************************************************************/
 int distraction_detect(double angle_nose_mouth_l, double angle_nose_mouth_r, double angle_eye_l_mouth_l) {
-   if ((angle_nose_mouth_l < 25) || (angle_nose_mouth_r < 25)) return false;
-   else if ((angle_nose_mouth_l < 30) && (angle_nose_mouth_r < 30))
+   if ((angle_nose_mouth_l < 15) || (angle_nose_mouth_r < 15)) return false;
+   else if ((angle_nose_mouth_l < 25) && (angle_nose_mouth_r < 25))
       return false;
-   else if ((angle_eye_l_mouth_l > 10) && (angle_eye_l_mouth_l < 80))
+   else if ((angle_eye_l_mouth_l > 10) && (angle_eye_l_mouth_l < 85))
       return false;
    else
       return true;
@@ -173,6 +185,8 @@ void loop_detect() {
     * @@ => 1 - Lendo a imagem da câmera
     **************************************************************************/
    camera_init_test();
+   sd_init_test();
+
    image = esp_camera_fb_get();
    if (image != NULL) {
       camera_error_count = 0;
@@ -208,6 +222,8 @@ void loop_detect() {
          double angle_nose_mouth_l = angle_between(data_predict.nose[0], data_predict.nose[1], data_predict.mouth_l[0], data_predict.mouth_l[1]);
          double angle_nose_mouth_r = angle_between(data_predict.nose[0], data_predict.nose[1], data_predict.mouth_r[0], data_predict.mouth_r[1]);
          double angle_eye_l_mouth_l = angle_between(data_predict.eye_l[0], data_predict.eye_l[1], data_predict.mouth_l[0], data_predict.mouth_l[1]);
+         
+         ESP_LOGW(LOG_TEST, "Angles: %f - %f - %f", angle_nose_mouth_l, angle_nose_mouth_r, angle_eye_l_mouth_l);
          rosto_ok = distraction_detect(angle_nose_mouth_l, angle_nose_mouth_r, angle_eye_l_mouth_l);
          qty_faces_detected = 1;
          break;
@@ -245,11 +261,13 @@ void loop_detect() {
       }
    }
    if ((alert_timeout_ms) && (erro_timeout_ms < TEMPO_ERRO_MS)) {
-      modo_led_status((modo_led_t) LED_STATUS_PISCA_RAPIDO);
+      modo_led_status((modo_led_t) LED_STATUS_LIGADO);
+      // modo_buzzer((modo_saida_buzzer_t) BUZZER_LIGADO);
       ESP_LOGE(LOG_TEST, "Distracao! >D:%d A:%d e:%d", distraction_timeout, alert_timeout_ms, erro_timeout_ms);
    }
    else {
-      modo_led_status((modo_led_t) LED_STATUS_LIGADO);
+      modo_led_status((modo_led_t) LED_STATUS_DESLIGADO);
+      // modo_buzzer((modo_saida_buzzer_t) BUZZER_DESLIGADO);
       ESP_LOGI(LOG_TEST, "Normal! >D:%d A:%d  e:%d", distraction_timeout, alert_timeout_ms, erro_timeout_ms);
    }
 
@@ -258,7 +276,7 @@ void loop_detect() {
     **************************************************************************/
    if (save_image == 1) {
       save_image = 0;
-      salvar_data_in_sd();
+      if (sd_iniciou) sd_save_data();
    }
 
    if (image != NULL) esp_camera_fb_return(image);

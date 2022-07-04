@@ -17,7 +17,7 @@ typedef enum modo_led_t {
 } modo_led_t;
 
 static volatile uint16_t pisca_led_status_timeout = 0;
-static volatile uint16_t tempo_estrobo_status = 0;
+static volatile uint16_t tempo_estrobo_led = 0;
 static volatile uint16_t troca_modo_led_status_timeout = 0;
 static TaskHandle_t taskhandle_led_status_controller; // handle da tarefa de contrle dos leds.
 static QueueHandle_t led_status_queue; 
@@ -27,7 +27,7 @@ static volatile modo_led_t modo_led = LED_STATUS_DESLIGADO;
 static void led_bicolor_configura_pinos() {
    gpio_pad_select_gpio(LED_STATUS);
    gpio_set_direction(LED_STATUS, GPIO_MODE_OUTPUT);
-   gpio_set_level(LED_STATUS, 0);
+   gpio_set_level(LED_STATUS, 1);
 }
 
 // Saidas LEDs ----------------------------------------------------------------
@@ -91,7 +91,7 @@ static void controle_led_status(modo_led_t modo_atual) {
          break;
    }
 
-   gpio_set_level(LED_STATUS, !s_led);
+   gpio_set_level(LED_STATUS, s_led);
 }
 
 static void task_led_status(void* pv) {
@@ -107,9 +107,9 @@ static void task_led_status(void* pv) {
       }
 
       if (pisca_led_status_timeout) pisca_led_status_timeout--;
-      if (tempo_estrobo_status) tempo_estrobo_status--;
+      if (tempo_estrobo_led) tempo_estrobo_led--;
       if (troca_modo_led_status_timeout) troca_modo_led_status_timeout--;
-      if (tempo_estrobo_status > 0) controle_led_status(LED_STATUS_PISCA_RAPIDO);
+      if (tempo_estrobo_led > 0) controle_led_status(LED_STATUS_PISCA_RAPIDO);
       else controle_led_status(modo_led);
       
       vTaskDelay(LED_STATUS_BASE_TEMPO_MS / portTICK_PERIOD_MS);
@@ -121,7 +121,7 @@ void modo_led_status(modo_led_t modo) {
 }
 
 void estrobo_led_status_ms(uint16_t ms) {
-   tempo_estrobo_status = (ms / LED_STATUS_BASE_TEMPO_MS);
+   tempo_estrobo_led = (ms / LED_STATUS_BASE_TEMPO_MS);
 }
 
 void init_task_led_status_controller() {

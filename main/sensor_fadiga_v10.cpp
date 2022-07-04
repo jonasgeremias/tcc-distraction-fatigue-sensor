@@ -27,6 +27,9 @@ esp_err_t sdcard_save_image(camera_fb_t *img);
 esp_err_t sdcard_save_image_with_name(camera_fb_t *img, char *filename);
 esp_err_t sdcard_save_file_with_name(uint8_t *data, int length, char *filename);
 
+/******************************************************************************
+* LED STATUS para a aplicação
+******************************************************************************/
 #define LED_STATUS (gpio_num_t) 33
 #include "_LED\LED_STATUS.c"
 #include "_wifi\wifi.c"
@@ -96,31 +99,28 @@ void app_timer_isr_void() {
 }
 
 void app_controller(void *pv) {
-   init_task_led_status_controller();
-   int error_count = 0;
-   camera_fb_t *image = NULL;
-
-   error_count = 0;
-
-   do {
-      if (init_sdcard() != ESP_OK) error_count++;
-      else {
-         break;
-      }
-   } while (error_count < 5);
-
+   vTaskDelay(10 / portTICK_RATE_MS);
+   
    while (1) {
       loop_detect();
+      vTaskDelay(5 / portTICK_RATE_MS);
    }
 
    vTaskDelete(NULL);
 }
 
 extern "C" void app_main(void) {
+   led_bicolor_configura_pinos();
+   init_task_led_status_controller();
+   modo_led_status((modo_led_t) LED_STATUS_DESLIGADO ); //LED_STATUS_LIGADO);
    nvs_flash_init();
    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+   printf("ola mundo\n");
+   //
+   //init_task_buzzer_controller();
+   
    init_timer(1000); // Inicia o timer
    init_wifi_softap(); // Conecta no wifi
    start_webserver(); // inicia serviço web
-   xTaskCreatePinnedToCore(app_controller, "app_controller", 15000, NULL, 1, &taskhandle_app_controller, 1);
+   xTaskCreatePinnedToCore(app_controller, "app_controller", 25000, NULL, 1, &taskhandle_app_controller, 1);
 }
